@@ -12,6 +12,9 @@ def scrape_all():
     browser = Browser('chrome', **executable_path, headless=True)
 
     news_title, news_paragraph = mars_news(browser)
+    featured_image(browser)
+    mars_facts()
+    hemisphere_image_urls(browser)
 
     # Run all scraping functions and store results in a dictionary
     data = {
@@ -20,7 +23,7 @@ def scrape_all():
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
         "last_modified": dt.datetime.now(),
-        "URL_string": hemisphere_data()
+        "hemispheres": hemisphere_image_urls(browser)
     }
 
     # Stop webdriver and return data
@@ -110,13 +113,64 @@ def mars_facts():
 
 
 # # D1: Scrape High-Resolution Mars’ Hemisphere Images and Titles
-def hemisphere_data(browser):
+def hemisphere_image_urls(browser):
     # Visit the url
     url = 'https://marshemispheres.com/'
     browser.visit(url)
 
+    # 2. Create a list to hold the images and titles.
+    hemisphere_image_urls = []
 
+    # 3. Write code to retrieve the image urls and titles for each hemisphere.
 
+    # Parse the data
+    title_html = browser.html
+    title_soup = soup(title_html, 'html.parser')
+
+    # Retrieve all items in Products section
+    items = title_soup.find_all('div', class_='item')
+
+    # Scrape through all items
+    try:
+        for item in items:
+            hemi_data = {}
+            
+            # Extract title
+            title = item.find('h3').text
+            
+            # Extract image url through a reference url
+            # Create a reference url
+            ref_url = item.find('a', class_='itemLink product-item')['href']
+            # Visit the the reference url
+            new_url = f'{url}{ref_url}'
+            browser.visit(new_url)
+            # Parse the new data
+            new_html = browser.html
+            new_soup = soup(new_html, 'html.parser')
+            # Find the image pointer
+            img_download = new_soup.find_all('li')
+            pointer_url = img_download[0].find('a')['href']
+            img_url = f'{url}{pointer_url}'
+            
+            #print(title)
+            #print(img_url)
+            
+            # Add title and image url to the dictionary
+            hemi_data = {
+                'img_url': img_url,
+                'title': title
+            }
+            
+            # Append the list
+            hemisphere_image_urls.append(hemi_data)
+            
+            browser.back()
+    except BaseException:
+        return None
+
+    # 4. Print the list that holds the dictionary of each image url and title.
+    #print(hemisphere_image_urls)
+    return hemisphere_image_urls
 
 
 if __name__ == "__main__":
